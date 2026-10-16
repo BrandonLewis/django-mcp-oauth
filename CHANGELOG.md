@@ -9,3 +9,6 @@ that a token request naming no scope receives the client's full registered
 scope rather than an empty one the resource server would reject. The product
 hook (`MCP_OAUTH_AUTHORIZE_USER`) and the consent template are settings;
 nothing in the app imports a product.
+
+Requires PyJWT 2.15 or newer: every 2.10 to 2.14 release carries published
+advisories, and the floor is what lets a dependency audit of an adopter pass.
