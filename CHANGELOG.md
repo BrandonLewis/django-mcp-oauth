@@ -10,5 +10,6 @@ scope rather than an empty one the resource server would reject. The product
 hook (`MCP_OAUTH_AUTHORIZE_USER`) and the consent template are settings;
 nothing in the app imports a product.
 
-Requires PyJWT 2.15 or newer: every 2.10 to 2.14 release carries published
-advisories, and the floor is what lets a dependency audit of an adopter pass.
+Requires Django 5.2 or newer and PyJWT 2.15 or newer: Django 5.1 is end-of-life
+and every PyJWT 2.10 to 2.14 release carries published advisories. The floors are
+what let a dependency audit of an adopter pass.

@@ -11,7 +11,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
-    "Django>=5.1",
+    "Django>=5.2",    # 5.1 is end-of-life with open advisories; 5.2 is the LTS floor
     "Authlib>=1.7.2",
     "PyJWT>=2.15",   # 2.10-2.14 carry advisories fixed in 2.15 (pip-audit, PYSEC-2026-41xx)
     "cryptography>=42",

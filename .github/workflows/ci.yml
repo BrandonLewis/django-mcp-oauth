@@ -19,10 +19,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # the floors: the oldest Django and Authlib a product pins, with the
-          # oldest PyJWT that has no open advisories (pip-audit gates the job)
+          # the floors: the oldest supported Django (5.2 LTS), the oldest Authlib
+          # a product pins, and the oldest PyJWT with no open advisories —
+          # pip-audit gates the job, so the floors must themselves be clean
           - python-version: "3.10"
-            django: "Django==5.1.*"
+            django: "Django==5.2.*"
             authlib: "Authlib==1.7.2"
             pyjwt: "PyJWT==2.15.*"
           - python-version: "3.12"
