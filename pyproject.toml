@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-mcp-oauth"
+version = "0.1.0"
+description = "An OAuth 2.1 authorization server for MCP resource servers, as a Django app: RFC 9728/8414/7591/7517/6750 profile, PKCE, refresh rotation, client-credentials service accounts."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "Django>=5.1",
+    "Authlib>=1.7.2",
+    "PyJWT>=2.9",
+    "cryptography>=42",
+]
+
+[project.optional-dependencies]
+drf = ["djangorestframework>=3.15"]
+test = ["pytest", "pytest-django", "djangorestframework>=3.15"]
+
+[project.urls]
+Homepage = "https://github.com/BrandonLewis/django-mcp-oauth"
+Source = "https://github.com/BrandonLewis/django-mcp-oauth"
+Changelog = "https://github.com/BrandonLewis/django-mcp-oauth/blob/main/CHANGELOG.md"
+Security = "https://github.com/BrandonLewis/django-mcp-oauth/security/policy"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["django_mcp_oauth*"]
+
+[tool.setuptools.package-data]
+"django_mcp_oauth" = ["templates/mcp_oauth/*.html"]
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "UP"]
+ignore = ["E501", "B904"]

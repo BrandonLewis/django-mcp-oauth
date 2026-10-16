@@ -1,0 +1,10 @@
+# gitleaks config for CI. Default rules; the test suite generates its RSA key
+# at import time (tests/test_oauth_keys.py), so no key material is committed.
+title = "django-mcp-oauth"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "tests/test_oauth_metadata.py plants a syntactically broken PEM to prove the JWKS view fails as JSON rather than an HTML 500; it is not key material"
+regexes = ['''not-valid-key-material''']

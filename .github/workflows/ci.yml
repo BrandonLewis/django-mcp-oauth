@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # the floors: what conformed.ai pins today
+          - python-version: "3.10"
+            django: "Django==5.1.*"
+            authlib: "Authlib==1.7.2"
+            pyjwt: "PyJWT==2.10.*"
+          - python-version: "3.12"
+            django: "Django==5.2.*"
+            authlib: "Authlib>=1.8"
+            pyjwt: "PyJWT>=2.9"
+          # the ceiling: what BidManager runs
+          - python-version: "3.13"
+            django: "Django>=6.1,<6.2"
+            authlib: "Authlib>=1.8"
+            pyjwt: "PyJWT>=2.9"
+    name: py${{ matrix.python-version }} / ${{ matrix.django }} / ${{ matrix.authlib }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          python -m pip install -U pip setuptools wheel
+          pip install -e '.[test]' "${{ matrix.django }}" "${{ matrix.authlib }}" "${{ matrix.pyjwt }}"
+          python -c "import django, authlib, jwt; print(django.get_version(), authlib.__version__, jwt.__version__)"
+      - run: python -m pytest -q
+      - name: makemigrations --check (the models match the committed migration)
+        run: |
+          python - <<'PY'
+          import django, os, sys
+          os.environ["DJANGO_SETTINGS_MODULE"] = "tests.settings"
+          django.setup()
+          from django.core.management import call_command
+          call_command("makemigrations", "mcp_oauth", "--check", "--dry-run")
+          PY
+      - name: Dependency vulnerability audit (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit --skip-editable
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Lint
+        run: |
+          pip install black ruff
+          black --check --line-length 120 .
+          ruff check --line-length 120 .
+      - name: Secret scan (gitleaks)
+        run: |
+          curl -sSL -o gitleaks.tgz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+          echo "5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba  gitleaks.tgz" | sha256sum -c
+          tar xzf gitleaks.tgz gitleaks
+          ./gitleaks git --no-banner --redact --exit-code 1 --config .gitleaks.toml .
+      - name: Wheel smoke (build, install clean, import)
+        run: |
+          pip install build
+          python -m build --wheel --outdir dist .
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install -q "$(ls dist/django_mcp_oauth-*.whl)[drf]"
+          /tmp/smoke/bin/python -c "import django_mcp_oauth, django_mcp_oauth.drf; print('wheel ok', django_mcp_oauth.__version__)"
