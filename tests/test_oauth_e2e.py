@@ -266,3 +266,43 @@ class EndToEndFlowTests(TestCase):
             OAuth2Token.objects.get(refresh_token=old_refresh).refresh_token_revoked_at,
             revoked_at,
         )
+
+    def test_every_refresh_returns_a_new_refresh_token(self):
+        """The presented refresh token is retired on use, so the response must
+        carry its replacement or the client's next refresh fails."""
+        client_id, initial = self._obtain_token()
+        old_refresh = initial["refresh_token"]
+
+        resp = self._refresh(client_id, old_refresh)
+        self.assertEqual(resp.status_code, 200)
+        new_refresh = resp.json().get("refresh_token")
+        self.assertTrue(new_refresh)
+        self.assertNotEqual(new_refresh, old_refresh)
+
+    def test_connection_survives_repeated_refreshes(self):
+        """What an OAuth client does: keep the newest refresh token it was
+        given. Four refreshes, each after the grace window has closed, all
+        succeed and the last access token still validates."""
+        import time
+
+        from django_mcp_oauth.models import OAuth2Token
+
+        client_id, body = self._obtain_token()
+        refresh = body["refresh_token"]
+        for n in range(1, 5):
+            OAuth2Token.objects.filter(refresh_token_revoked_at__gt=0).update(
+                refresh_token_revoked_at=int(time.time()) - 3600
+            )
+            resp = self._refresh(client_id, refresh)
+            self.assertEqual(resp.status_code, 200, f"refresh {n}: {resp.content!r}")
+            body = resp.json()
+            refresh = body.get("refresh_token") or refresh
+
+        result = validation.validate_access_token(
+            body["access_token"],
+            expected_audience=AUD,
+            expected_issuer=ISS,
+            jwks=keys.build_jwks(),
+            required_scope="mcp",
+        )
+        self.assertEqual(result.subject, str(self.user.pk))

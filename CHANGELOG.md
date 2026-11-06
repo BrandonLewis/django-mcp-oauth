@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+Fix: a refresh now returns a new refresh token. 0.1.0 retired the presented
+refresh token on every refresh but, through Authlib's default
+`INCLUDE_NEW_REFRESH_TOKEN = False`, returned no replacement, so a client's
+second refresh, one access-token lifetime after the first, always failed with
+`invalid_grant` and every connection signed out about two token lifetimes after
+it was made. The rotation grace window is unchanged.
+
 ## 0.1.0
 
 First cut, extracted from two products that each carried a copy of this

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-mcp-oauth"
-version = "0.1.0"
+version = "0.1.1"
 description = "An OAuth 2.1 authorization server for MCP resource servers, as a Django app: RFC 9728/8414/7591/7517/6750 profile, PKCE, refresh rotation, client-credentials service accounts."
 readme = "README.md"
 license = "Apache-2.0"

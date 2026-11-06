@@ -51,6 +51,10 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
 
 class RefreshTokenGrant(_RefreshTokenGrant):
     TOKEN_ENDPOINT_AUTH_METHODS = ["none", "client_secret_basic", "client_secret_post"]
+    # Rotate: every refresh response carries a new refresh token. revoke_old_credential
+    # below retires the presented one, so without this (Authlib's default is False) the
+    # client keeps a revoked token and its next refresh fails with invalid_grant.
+    INCLUDE_NEW_REFRESH_TOKEN = True
 
     def authenticate_refresh_token(self, refresh_token):
         try:
