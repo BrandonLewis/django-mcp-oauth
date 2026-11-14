@@ -84,6 +84,19 @@ class ClientRegistration(ClientRegistrationEndpoint):
         # Return None so Authlib skips metadata-based claims validation.
         return None
 
+    def extract_client_metadata(self, request):
+        # A client that registers without `scope` (RFC 7591 makes it optional,
+        # and several MCP clients omit it) would otherwise be stored with an
+        # empty scope. Every token it obtained would then be clamped to "" by
+        # get_allowed_scope and rejected by the resource server's required-scope
+        # check (insufficient_scope): sign-in "succeeds", the connection never
+        # works. Default to the scope this server requires; it is the only one
+        # advertised in scopes_supported.
+        metadata = super().extract_client_metadata(request)
+        if not str(metadata.get("scope") or "").strip():
+            metadata["scope"] = conf.scope()
+        return metadata
+
     @staticmethod
     def _is_public_client_request(request) -> bool:
         payload = (request.payload.data or {}) if request.payload else {}

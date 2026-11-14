@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1
+
+- Fix: a client that registered without `scope` (optional under RFC 7591, and
+  omitted by several MCP clients) was stored with an empty scope, so every
+  token it got was clamped to "" and the resource server rejected it as
+  `insufficient_scope`. Sign-in looked successful, but the connection never
+  worked. Registration now stores `MCP_OAUTH_SCOPE` when none is given, and an
+  existing client with no stored scope reads as holding it, so clients that
+  already registered start working without re-registering.
+
 ## 0.1.0
 
 First cut, extracted from two products that each carried a copy of this
