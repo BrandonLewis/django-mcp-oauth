@@ -14,4 +14,4 @@ is a dotted-path setting, ``MCP_OAUTH_AUTHORIZE_USER``. Everything else is
 configuration (issuer, resource URL, key, scope, TTLs, consent template).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

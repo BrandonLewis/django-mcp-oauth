@@ -52,7 +52,9 @@ class TokenGeneratorTests(TestCase):
             include_refresh_token=False,
         )
         self.assertIn("scope", token)
-        self.assertEqual(token["scope"], "")
+        # A client stored with no scope reads as holding MCP_OAUTH_SCOPE, so the
+        # token carries it instead of an empty scope the RS would reject (0.1.1).
+        self.assertEqual(token["scope"], "mcp")
         self.assertEqual(token["token_type"], "Bearer")
         self.assertEqual(token["expires_in"], settings.MCP_OAUTH_ACCESS_TOKEN_TTL)
 

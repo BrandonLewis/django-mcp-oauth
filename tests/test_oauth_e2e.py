@@ -266,3 +266,92 @@ class EndToEndFlowTests(TestCase):
             OAuth2Token.objects.get(refresh_token=old_refresh).refresh_token_revoked_at,
             revoked_at,
         )
+
+
+@override_settings(
+    MCP_OAUTH_PRIVATE_KEY=TEST_KEY,
+    MCP_OAUTH_KEY_ID="test-kid",
+    MCP_OAUTH_ISSUER=ISS,
+    MCP_RESOURCE_URL=AUD,
+)
+class RegistrationWithoutScopeTests(TestCase):
+    """RFC 7591 makes `scope` optional at registration. A client that omits it
+    must still end up with a token the resource server accepts."""
+
+    def _flow(self, auth_scope):
+        user = User.objects.create_user(username=f"u{secrets.token_hex(3)}", password="pw")
+        resp = self.client.post(
+            "/oauth/register",
+            data=json.dumps(
+                {
+                    "client_name": "No-scope client",
+                    "redirect_uris": ["http://localhost:8765/cb"],
+                    "grant_types": ["authorization_code", "refresh_token"],
+                    "response_types": ["code"],
+                    "token_endpoint_auth_method": "none",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["scope"], "mcp")
+        client_id = resp.json()["client_id"]
+        verifier, challenge = _pkce()
+        self.client.force_login(user)
+        data = {
+            "client_id": client_id,
+            "response_type": "code",
+            "redirect_uri": "http://localhost:8765/cb",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+            "confirm": "yes",
+        }
+        if auth_scope:
+            data["scope"] = auth_scope
+        resp = self.client.post("/oauth/authorize", data)
+        code = parse_qs(urlparse(resp["Location"]).query)["code"][0]
+        resp = self.client.post(
+            "/oauth/token",
+            {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": "http://localhost:8765/cb",
+                "client_id": client_id,
+                "code_verifier": verifier,
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        token = resp.json()
+        self.assertEqual(token["scope"], "mcp")
+        validated = validation.validate_access_token(
+            token["access_token"],
+            expected_audience=AUD,
+            expected_issuer=ISS,
+            jwks=keys.build_jwks(),
+            required_scope="mcp",
+        )
+        self.assertIn("mcp", validated.scopes)
+
+    def test_scope_requested_at_authorize(self):
+        self._flow("mcp")
+
+    def test_no_scope_anywhere(self):
+        self._flow(None)
+
+
+@override_settings(
+    MCP_OAUTH_PRIVATE_KEY=TEST_KEY,
+    MCP_OAUTH_KEY_ID="test-kid",
+    MCP_OAUTH_ISSUER=ISS,
+    MCP_RESOURCE_URL=AUD,
+)
+class LegacyEmptyScopeClientTests(TestCase):
+    def test_client_stored_without_scope_reads_as_required_scope(self):
+        from django_mcp_oauth.models import OAuth2Client
+
+        c = OAuth2Client(client_id="legacy", client_secret="")
+        c.set_client_metadata({"redirect_uris": ["http://localhost/cb"]})
+        c.save()
+        c = OAuth2Client.objects.get(client_id="legacy")
+        self.assertEqual(c.scope, "mcp")
+        self.assertEqual(c.get_allowed_scope("mcp"), "mcp")

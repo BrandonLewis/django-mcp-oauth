@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-mcp-oauth"
-version = "0.1.0"
+version = "0.1.1"
 description = "An OAuth 2.1 authorization server for MCP resource servers, as a Django app: RFC 9728/8414/7591/7517/6750 profile, PKCE, refresh rotation, client-credentials service accounts."
 readme = "README.md"
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
     "Django>=5.2",    # 5.1 is end-of-life with open advisories; 5.2 is the LTS floor
-    "Authlib>=1.7.2",
+    "Authlib>=1.9.1",
     "PyJWT>=2.15",   # 2.10-2.14 carry advisories fixed in 2.15 (pip-audit, PYSEC-2026-41xx)
     "cryptography>=42",
 ]

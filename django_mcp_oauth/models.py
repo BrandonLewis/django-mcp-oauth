@@ -79,7 +79,13 @@ class OAuth2Client(models.Model, ClientMixin):
 
     @property
     def scope(self):
-        return self.client_metadata.get("scope", "")
+        # Clients registered without a scope (RFC 7591 makes it optional) were
+        # stored with none; read them as holding the server's required scope so
+        # their tokens are not clamped to "" and rejected as insufficient_scope.
+        # Registration now stores the default too (ClientRegistration).
+        from django_mcp_oauth import conf
+
+        return self.client_metadata.get("scope") or conf.scope()
 
     def get_client_id(self):
         return self.client_id
