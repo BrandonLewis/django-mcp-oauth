@@ -9,6 +9,9 @@
   worked. Registration now stores `MCP_OAUTH_SCOPE` when none is given, and an
   existing client with no stored scope reads as holding it, so clients that
   already registered start working without re-registering.
+- Require `Authlib>=1.9.1` (was 1.7.2). Authlib 1.7.2 and 1.8.x carry
+  published advisories (PYSEC-2026-4354..4359, CVE-2026-96760,
+  CVE-2026-116672); 1.9.1 is the first release clear of all of them.
 
 ## 0.1.0
 
